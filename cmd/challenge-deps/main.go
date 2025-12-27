@@ -139,13 +139,8 @@ func run(cfg config) error {
 		// Filter to only challenge.yml files
 		challengeFiles := git.FilterChallengeFiles(postMergeFiles)
 
-		// Get challenges from post-merge state
-		var allChallenges []string
-		for _, f := range challengeFiles {
-			allChallenges = append(allChallenges, f)
-		}
-
-		challenges, err = p.ParseChallengesByPaths(allChallenges)
+		// Parse challenges from post-merge state
+		challenges, err = p.ParseChallengesByPaths(challengeFiles)
 		if err != nil {
 			return &ParseError{msg: err.Error()}
 		}
