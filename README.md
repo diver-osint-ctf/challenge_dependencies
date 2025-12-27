@@ -53,42 +53,11 @@ graph LR
 Use this action in your workflow to analyze challenge dependencies:
 
 ```yaml
-- name: Analyze dependencies
-  uses: diver-osint-ctf/challenge_dependencies@main
-  with:
-    repo: '.'
-    base: 'main'
-    head: 'HEAD'
-    format: 'markdown'
-
-- name: Analyze current branch only
-  uses: diver-osint-ctf/challenge_dependencies@main
-  with:
-    repo: '.'
-    format: 'summary'
-```
-
-### Inputs
-
-- `repo`: Repository path (default: `.`)
-- `base`: Base branch for comparison (optional)
-- `head`: Head branch for comparison (optional)
-- `format`: Output format - `markdown`, `mermaid`, `summary` (default: `markdown`)
-- `direction`: Graph direction - `LR`, `TB`, `RL`, `BT` (default: `LR`)
-
-### Outputs
-
-- `graph`: Generated dependency graph
-- `summary`: Text summary of dependencies
-
-### Complete Example
-
-```yaml
 name: Check Dependencies
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   analyze:
@@ -102,7 +71,7 @@ jobs:
         id: deps
         uses: diver-osint-ctf/challenge_dependencies@main
         with:
-          repo: '.'
+          repo: "."
           base: ${{ github.base_ref }}
           head: ${{ github.head_ref }}
 
@@ -118,7 +87,18 @@ jobs:
             });
 ```
 
-See `.github/workflows/ci.yml` for the CI/CD pipeline example.
+### Inputs
+
+- `repo`: Repository path (default: `.`)
+- `base`: Base branch for comparison (optional)
+- `head`: Head branch for comparison (optional)
+- `format`: Output format - `markdown`, `mermaid`, `summary` (default: `markdown`)
+- `direction`: Graph direction - `LR`, `TB`, `RL`, `BT` (default: `LR`)
+
+### Outputs
+
+- `graph`: Generated dependency graph
+- `summary`: Text summary of dependencies
 
 ## Development
 
