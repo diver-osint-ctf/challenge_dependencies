@@ -63,6 +63,10 @@ runs:
         GITHUB_BASE_REF: ''
         GITHUB_HEAD_REF: ''
       run: |
+        # Unset GitHub Actions env vars to prevent auto-detection
+        unset GITHUB_BASE_REF
+        unset GITHUB_HEAD_REF
+
         # Build command with required arguments
         CMD="/tmp/challenge-deps --repo \"${REPO}\" --format \"${FORMAT}\" --direction \"${DIRECTION}\""
 
@@ -81,7 +85,7 @@ runs:
 
         # Generate summary if not already in summary format
         if [ "${FORMAT}" != "summary" ]; then
-          SUMMARY=$(/tmp/challenge-deps --repo "${REPO}" --format summary)
+          SUMMARY=$(GITHUB_BASE_REF='' GITHUB_HEAD_REF='' /tmp/challenge-deps --repo "${REPO}" --format summary)
           echo "summary<<EOF" >> $GITHUB_OUTPUT
           echo "$SUMMARY" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
