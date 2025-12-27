@@ -59,6 +59,9 @@ runs:
         HEAD: ${{ inputs.head }}
         FORMAT: ${{ inputs.format }}
         DIRECTION: ${{ inputs.direction }}
+        # Clear GitHub Actions env vars to prevent auto-detection
+        GITHUB_BASE_REF: ''
+        GITHUB_HEAD_REF: ''
       run: |
         # Build command with required arguments
         CMD="/tmp/challenge-deps --repo \"${REPO}\" --format \"${FORMAT}\" --direction \"${DIRECTION}\""

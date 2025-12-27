@@ -50,7 +50,16 @@ graph LR
 
 ### Use as an Action
 
-Use this action in your workflow to analyze challenge dependencies:
+**Simple usage (current branch only):**
+
+```yaml
+- name: Analyze dependencies
+  uses: diver-osint-ctf/challenge_dependencies@main
+  with:
+    repo: '.'
+```
+
+**With branch comparison:**
 
 ```yaml
 name: Check Dependencies
@@ -65,15 +74,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Required for branch comparison
+
+      - name: Fetch base branch
+        run: git fetch origin ${{ github.base_ref }}
 
       - name: Analyze dependencies
         id: deps
         uses: diver-osint-ctf/challenge_dependencies@main
         with:
-          repo: "."
-          base: ${{ github.base_ref }}
-          head: ${{ github.head_ref }}
+          repo: '.'
+          base: 'origin/${{ github.base_ref }}'
+          head: 'HEAD'
 
       - name: Comment PR
         uses: actions/github-script@v7
@@ -86,6 +98,11 @@ jobs:
               body: '${{ steps.deps.outputs.graph }}'
             });
 ```
+
+**Important:** When comparing branches, you must:
+1. Use `fetch-depth: 0` to get full git history
+2. Explicitly fetch the base branch with `git fetch origin <branch>`
+3. Use `origin/<branch>` format for the base parameter
 
 ### Inputs
 
