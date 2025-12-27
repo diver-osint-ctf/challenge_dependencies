@@ -119,14 +119,11 @@ jobs:
               graph = 'Failed to generate dependency graph';
             }
 
-            const body = `## Challenge Dependency Graph
-
-This shows the dependencies between challenges after merging this PR.
-
-${graph}
-
----
-*Generated automatically by challenge-deps*`;
+            const body = '## Challenge Dependency Graph\n\n' +
+              'This shows the dependencies between challenges after merging this PR.\n\n' +
+              graph + '\n\n' +
+              '---\n' +
+              '*Generated automatically by challenge-deps*';
 
             // Check if there's already a comment from this action
             const comments = await github.rest.issues.listComments({
