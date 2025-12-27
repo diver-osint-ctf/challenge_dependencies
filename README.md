@@ -74,7 +74,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required for branch comparison
+          fetch-depth: 0 # Required for branch comparison
 
       - name: Fetch base branch
         run: git fetch origin ${{ github.base_ref }}
@@ -83,19 +83,21 @@ jobs:
         id: deps
         uses: diver-osint-ctf/challenge_dependencies@main
         with:
-          repo: '.'
-          base: 'origin/${{ github.base_ref }}'
-          head: 'HEAD'
+          repo: "."
+          base: "origin/${{ github.base_ref }}"
+          head: "HEAD"
 
       - name: Comment PR
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
+        env:
+          GRAPH_OUTPUT: ${{ steps.deps.outputs.graph }}
         with:
           script: |
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '${{ steps.deps.outputs.graph }}'
+              body: process.env.GRAPH_OUTPUT
             });
 ```
 
