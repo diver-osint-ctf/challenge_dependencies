@@ -1,0 +1,89 @@
+name: 'Challenge Dependencies Analyzer'
+description: 'Analyze and visualize CTF challenge dependencies as Mermaid graphs'
+author: 'DiverOsintCTF'
+
+branding:
+  icon: 'git-branch'
+  color: 'blue'
+
+inputs:
+  repo:
+    description: 'Path to the challenge repository'
+    required: false
+    default: '.'
+  base:
+    description: 'Base branch for comparison (optional)'
+    required: false
+    default: ''
+  head:
+    description: 'Head branch for comparison (optional)'
+    required: false
+    default: ''
+  format:
+    description: 'Output format: markdown, mermaid, summary'
+    required: false
+    default: 'markdown'
+  direction:
+    description: 'Mermaid graph direction: LR, TB, RL, BT'
+    required: false
+    default: 'LR'
+
+outputs:
+  graph:
+    description: 'Generated dependency graph'
+    value: ${{ steps.generate.outputs.graph }}
+  summary:
+    description: 'Text summary of dependencies'
+    value: ${{ steps.generate.outputs.summary }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Build challenge-deps
+      shell: bash
+      run: |
+        cd ${{ github.action_path }}
+        go build -o /tmp/challenge-deps ./cmd/challenge-deps
+
+    - name: Generate dependency graph
+      id: generate
+      shell: bash
+      env:
+        REPO: ${{ inputs.repo }}
+        BASE: ${{ inputs.base }}
+        HEAD: ${{ inputs.head }}
+        FORMAT: ${{ inputs.format }}
+        DIRECTION: ${{ inputs.direction }}
+      run: |
+        # Build command with required arguments
+        CMD="/tmp/challenge-deps --repo \"${REPO}\" --format \"${FORMAT}\" --direction \"${DIRECTION}\""
+
+        # Add base and head if provided
+        if [ -n "${BASE}" ] && [ -n "${HEAD}" ]; then
+          CMD="${CMD} --base \"${BASE}\" --head \"${HEAD}\""
+        fi
+
+        # Generate graph
+        GRAPH=$(eval ${CMD})
+
+        # Save to output
+        echo "graph<<EOF" >> $GITHUB_OUTPUT
+        echo "$GRAPH" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+        # Generate summary if not already in summary format
+        if [ "${FORMAT}" != "summary" ]; then
+          SUMMARY=$(/tmp/challenge-deps --repo "${REPO}" --format summary)
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        else
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$GRAPH" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+        fi
