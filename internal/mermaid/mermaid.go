@@ -32,6 +32,17 @@ func (m *Generator) SetNewChallenges(challenges []models.ChallengeMetadata) {
 	}
 }
 
+// getDisplayName returns the display name for a challenge in the format "category/name"
+func (m *Generator) getDisplayName(challengeName string) string {
+	nodes := m.graph.GetNodes()
+	if challenge, ok := nodes[challengeName]; ok {
+		if challenge.Category != "" {
+			return fmt.Sprintf("%s/%s", challenge.Category, challenge.Name)
+		}
+	}
+	return challengeName
+}
+
 // Generate creates a Mermaid diagram from the dependency graph
 func (m *Generator) Generate(direction string) string {
 	var builder strings.Builder
@@ -73,7 +84,9 @@ func (m *Generator) Generate(direction string) string {
 	if len(allEdges) > 0 {
 		builder.WriteString("    %% Dependencies\n")
 		for _, e := range allEdges {
-			builder.WriteString(fmt.Sprintf("    %s --> %s\n", e.from, e.to))
+			fromDisplay := m.getDisplayName(e.from)
+			toDisplay := m.getDisplayName(e.to)
+			builder.WriteString(fmt.Sprintf("    %s --> %s\n", fromDisplay, toDisplay))
 		}
 	}
 
@@ -89,7 +102,7 @@ func (m *Generator) Generate(direction string) string {
 		sort.Strings(standaloneNodes)
 		builder.WriteString("\n    %% Standalone challenges\n")
 		for _, node := range standaloneNodes {
-			builder.WriteString(fmt.Sprintf("    %s\n", node))
+			builder.WriteString(fmt.Sprintf("    %s\n", m.getDisplayName(node)))
 		}
 	}
 
@@ -104,7 +117,13 @@ func (m *Generator) Generate(direction string) string {
 		}
 		sort.Strings(newNodes)
 
-		builder.WriteString(fmt.Sprintf("    class %s newChallenge\n", strings.Join(newNodes, ",")))
+		// Convert node names to display names
+		var newDisplayNodes []string
+		for _, node := range newNodes {
+			newDisplayNodes = append(newDisplayNodes, m.getDisplayName(node))
+		}
+
+		builder.WriteString(fmt.Sprintf("    class %s newChallenge\n", strings.Join(newDisplayNodes, ",")))
 	}
 
 	return builder.String()
@@ -157,7 +176,7 @@ func (m *Generator) GenerateSummary() string {
 			if m.newChallenges[name] {
 				isNew = " (NEW)"
 			}
-			builder.WriteString(fmt.Sprintf("- %s%s\n", name, isNew))
+			builder.WriteString(fmt.Sprintf("- %s%s\n", m.getDisplayName(name), isNew))
 		}
 		builder.WriteString("\n")
 	}
@@ -171,7 +190,12 @@ func (m *Generator) GenerateSummary() string {
 			}
 			deps := edges[name]
 			sort.Strings(deps)
-			builder.WriteString(fmt.Sprintf("- %s%s requires: %s\n", name, isNew, strings.Join(deps, ", ")))
+			// Convert dependency names to display names
+			var displayDeps []string
+			for _, dep := range deps {
+				displayDeps = append(displayDeps, m.getDisplayName(dep))
+			}
+			builder.WriteString(fmt.Sprintf("- %s%s requires: %s\n", m.getDisplayName(name), isNew, strings.Join(displayDeps, ", ")))
 		}
 	}
 

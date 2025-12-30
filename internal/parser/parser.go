@@ -85,6 +85,11 @@ func (p *Parser) parseChallenge(path string) (*models.Challenge, error) {
 	// Store the path for reference
 	challenge.Path = filepath.Dir(path)
 
+	// If category is not specified in YAML, extract from path
+	if challenge.Category == "" {
+		challenge.Category = p.extractCategory(path)
+	}
+
 	return &challenge, nil
 }
 

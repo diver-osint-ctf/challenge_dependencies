@@ -1,4 +1,5 @@
 name: challenge-4
+category: pwn
 requirements:
   - challenge-2
   - challenge-3

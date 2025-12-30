@@ -5,6 +5,9 @@ type Challenge struct {
 	// Name is the unique identifier for the challenge
 	Name string `yaml:"name"`
 
+	// Category is the challenge category (e.g., web, crypto, pwn)
+	Category string `yaml:"category,omitempty"`
+
 	// Requirements lists the names of challenges that must be completed before this one
 	Requirements []string `yaml:"requirements,omitempty"`
 
