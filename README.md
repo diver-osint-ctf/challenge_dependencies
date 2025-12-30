@@ -5,7 +5,7 @@ Visualize CTF challenge dependencies as Mermaid graphs. Works locally and in Git
 ## Installation
 
 ```bash
-go build -o bin/challenge-deps ./cmd/challenge-deps
+make build
 ```
 
 ## Usage
@@ -28,13 +28,7 @@ go build -o bin/challenge-deps ./cmd/challenge-deps
 
 ## Challenge Format
 
-Each challenge needs a `challenge.yml`:
-
-```yaml
-name: challenge-2
-requirements:
-  - challenge-1
-```
+see [testdata](./testdata)
 
 ## Output Example
 
@@ -48,43 +42,55 @@ graph LR
 
 ## GitHub Actions
 
-### Use as an Action
-
-**Simple usage (current branch only):**
-
-```yaml
-- name: Analyze dependencies
-  uses: diver-osint-ctf/challenge_dependencies@main
-  with:
-    repo: '.'
-```
-
-**With branch comparison:**
-
 ```yaml
 name: Check Dependencies
 
 on:
   pull_request:
     branches: [main]
+  issue_comment:
+    types:
+      - created
 
 jobs:
   analyze:
+    if: |
+      github.event_name == 'pull_request' ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request &&
+        contains(github.event.comment.body, '@github deps')
+      )
     runs-on: ubuntu-latest
     steps:
+      - name: Set PR info
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "BRANCH_NAME=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
+            echo "BASE_REF=${{ github.base_ref }}" >> $GITHUB_ENV
+          else
+            BRANCH_NAME=$(gh pr view ${{ github.event.issue.number }} --json headRefName --jq .headRefName --repo ${{ github.repository }})
+            BASE_REF=$(gh pr view ${{ github.event.issue.number }} --json baseRefName --jq .baseRefName --repo ${{ github.repository }})
+            echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+            echo "BASE_REF=${BASE_REF}" >> $GITHUB_ENV
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - uses: actions/checkout@v4
         with:
+          ref: ${{ env.BRANCH_NAME }}
           fetch-depth: 0 # Required for branch comparison
 
       - name: Fetch base branch
-        run: git fetch origin ${{ github.base_ref }}
+        run: git fetch origin ${{ env.BASE_REF }}
 
       - name: Analyze dependencies
         id: deps
         uses: diver-osint-ctf/challenge_dependencies@main
         with:
           repo: "."
-          base: "origin/${{ github.base_ref }}"
+          base: "origin/${{ env.BASE_REF }}"
           head: "HEAD"
 
       - name: Comment PR
@@ -99,32 +105,4 @@ jobs:
               repo: context.repo.repo,
               body: process.env.GRAPH_OUTPUT
             });
-```
-
-**Important:** When comparing branches, you must:
-1. Use `fetch-depth: 0` to get full git history
-2. Explicitly fetch the base branch with `git fetch origin <branch>`
-3. Use `origin/<branch>` format for the base parameter
-
-### Inputs
-
-- `repo`: Repository path (default: `.`)
-- `base`: Base branch for comparison (optional)
-- `head`: Head branch for comparison (optional)
-- `format`: Output format - `markdown`, `mermaid`, `summary` (default: `markdown`)
-- `direction`: Graph direction - `LR`, `TB`, `RL`, `BT` (default: `LR`)
-
-### Outputs
-
-- `graph`: Generated dependency graph
-- `summary`: Text summary of dependencies
-
-## Development
-
-```bash
-# Run tests
-go test ./...
-
-# Build
-go build -o bin/challenge-deps ./cmd/challenge-deps
 ```
