@@ -313,7 +313,7 @@ steps:
     with:
       fetch-depth: 0  # Full history for git comparison
 
-  - uses: actions/setup-go@v5
+  - uses: actions/setup-go@v6.4
     with:
       go-version: '1.21'
 
