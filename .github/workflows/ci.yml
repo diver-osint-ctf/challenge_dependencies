@@ -7,14 +7,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-permissions: {}
-
 jobs:
   test:
     name: Test
     runs-on: [takumi-runner]
-    permissions:
-      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -38,8 +34,6 @@ jobs:
   lint:
     name: Lint
     runs-on: [takumi-runner]
-    permissions:
-      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -58,8 +52,6 @@ jobs:
   build:
     name: Build
     runs-on: [takumi-runner]
-    permissions:
-      contents: read
     needs: [test, lint]
     steps:
       - name: Checkout code
@@ -82,9 +74,6 @@ jobs:
   generate-graph:
     name: Generate Dependency Graph
     runs-on: [takumi-runner]
-    permissions:
-      contents: read
-      pull-requests: write
     needs: build
     if: github.event_name == 'pull_request'
     steps:
