@@ -178,6 +178,55 @@ func TestGenerateSummary(t *testing.T) {
 	}
 }
 
+func TestGenerateWithCategories(t *testing.T) {
+	g := graph.New()
+	g.AddChallenge(models.Challenge{Name: "challenge-1", Category: "web"})
+	g.AddChallenge(models.Challenge{Name: "challenge-2", Category: "crypto", Requirements: []string{"challenge-1"}})
+
+	gen := New(g)
+	output := gen.Generate("LR")
+
+	// Should use bracket syntax with display names
+	if !strings.Contains(output, `challenge-2["crypto/challenge-2"] --> challenge-1["web/challenge-1"]`) {
+		t.Errorf("expected bracket syntax with category display names\nGot:\n%s", output)
+	}
+}
+
+func TestGenerateSummaryImmutability(t *testing.T) {
+	g := graph.New()
+	g.AddChallenge(models.Challenge{Name: "challenge-1"})
+	g.AddChallenge(models.Challenge{Name: "challenge-2", Requirements: []string{"challenge-1"}})
+
+	gen := New(g)
+
+	output1 := gen.GenerateSummary()
+	output2 := gen.GenerateSummary()
+
+	if output1 != output2 {
+		t.Errorf("GenerateSummary should be idempotent\nFirst:\n%s\nSecond:\n%s", output1, output2)
+	}
+}
+
+func TestGenerateMultipleNewChallenges(t *testing.T) {
+	g := graph.New()
+	g.AddChallenge(models.Challenge{Name: "a"})
+	g.AddChallenge(models.Challenge{Name: "b", Requirements: []string{"a"}})
+	g.AddChallenge(models.Challenge{Name: "c", Requirements: []string{"a"}})
+
+	gen := New(g)
+	gen.SetNewChallenges([]models.ChallengeMetadata{
+		{Challenge: models.Challenge{Name: "b"}, IsNew: true},
+		{Challenge: models.Challenge{Name: "c"}, IsNew: true},
+	})
+
+	output := gen.Generate("LR")
+
+	// class directive should use challenge names (not display names), comma-separated
+	if !strings.Contains(output, "class b,c newChallenge") {
+		t.Errorf("expected 'class b,c newChallenge' in output\nGot:\n%s", output)
+	}
+}
+
 func TestDirectionOptions(t *testing.T) {
 	directions := []string{"LR", "TB", "RL", "BT"}
 
