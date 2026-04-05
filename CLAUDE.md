@@ -139,7 +139,7 @@ make build
 ### Makefile Targets
 
 - `make test`: Run all tests with coverage
-- `make lint`: Run golangci-lint
+- `make lint`: Run go vet
 - `make format`: Format code with gofmt and goimports
 - `make build`: Build the binary
 - `make clean`: Clean build artifacts

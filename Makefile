@@ -11,7 +11,7 @@ GOTEST=$(GOCMD) test
 GOCLEAN=$(GOCMD) clean
 GOGET=$(GOCMD) get
 GOFMT=gofmt
-GOLINT=golangci-lint
+GOVET=$(GOCMD) vet
 
 all: format lint test build ## Run format, lint, test, and build
 
@@ -30,13 +30,9 @@ test: ## Run tests with coverage
 test-coverage: test ## Run tests and show coverage in browser
 	$(GOCMD) tool cover -html=coverage.out
 
-lint: ## Run linter
-	@echo "Running linter..."
-	@if command -v $(GOLINT) > /dev/null; then \
-		$(GOLINT) run ./...; \
-	else \
-		echo "golangci-lint not installed. Install it with: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin"; \
-	fi
+lint: ## Run go vet
+	@echo "Running go vet..."
+	$(GOVET) ./...
 
 format: ## Format code
 	@echo "Formatting code..."
@@ -61,8 +57,6 @@ deps: ## Download dependencies
 install-tools: ## Install development tools
 	@echo "Installing development tools..."
 	go install golang.org/x/tools/cmd/goimports@latest
-	@echo "To install golangci-lint, run:"
-	@echo "  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b \$$(go env GOPATH)/bin"
 
 run: build ## Build and run with test data
 	@echo "Running with test data..."
