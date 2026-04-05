@@ -92,7 +92,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
 
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           ref: ${{ env.BRANCH_NAME }}
           fetch-depth: 0 # Required for branch comparison
