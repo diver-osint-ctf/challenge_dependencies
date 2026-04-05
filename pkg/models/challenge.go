@@ -18,6 +18,5 @@ type Challenge struct {
 // ChallengeMetadata contains additional information about a challenge
 type ChallengeMetadata struct {
 	Challenge Challenge
-	Category  string // e.g., "web", "crypto", "pwn"
-	IsNew     bool   // Whether this challenge was added in the current branch
+	IsNew     bool // Whether this challenge was added in the current branch
 }

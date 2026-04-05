@@ -175,7 +175,7 @@ requirements:
 	// Verify categories
 	categoryCount := make(map[string]int)
 	for _, ch := range got {
-		categoryCount[ch.Category]++
+		categoryCount[ch.Challenge.Category]++
 	}
 
 	if categoryCount["web"] != 2 {

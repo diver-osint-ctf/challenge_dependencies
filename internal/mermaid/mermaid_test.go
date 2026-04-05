@@ -24,7 +24,7 @@ func TestGenerate(t *testing.T) {
 			direction: "LR",
 			want: []string{
 				"graph LR",
-				"challenge-2 --> challenge-1",
+				`challenge-2["challenge-2"] --> challenge-1["challenge-1"]`,
 			},
 		},
 		{
@@ -38,10 +38,10 @@ func TestGenerate(t *testing.T) {
 			direction: "TB",
 			want: []string{
 				"graph TB",
-				"challenge-2 --> challenge-1",
-				"challenge-3 --> challenge-1",
-				"challenge-4 --> challenge-2",
-				"challenge-4 --> challenge-3",
+				`challenge-2["challenge-2"] --> challenge-1["challenge-1"]`,
+				`challenge-3["challenge-3"] --> challenge-1["challenge-1"]`,
+				`challenge-4["challenge-4"] --> challenge-2["challenge-2"]`,
+				`challenge-4["challenge-4"] --> challenge-3["challenge-3"]`,
 			},
 		},
 		{

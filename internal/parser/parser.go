@@ -45,12 +45,8 @@ func (p *Parser) ParseAllChallenges() ([]models.ChallengeMetadata, error) {
 				return fmt.Errorf("failed to parse %s: %w", path, err)
 			}
 
-			// Extract category from path (e.g., "web", "crypto", "pwn")
-			category := p.extractCategory(path)
-
 			challenges = append(challenges, models.ChallengeMetadata{
 				Challenge: *challenge,
-				Category:  category,
 				IsNew:     false, // Will be set by git operations
 			})
 		}
@@ -119,14 +115,20 @@ func (p *Parser) ParseChallengesByPaths(paths []string) ([]models.ChallengeMetad
 		// Check if this is a challenge.yml file or a directory containing one
 		info, err := os.Stat(fullPath)
 		if err != nil {
-			continue // Skip if file doesn't exist
+			if os.IsNotExist(err) {
+				continue // Skip if file doesn't exist
+			}
+			return nil, fmt.Errorf("failed to stat %s: %w", fullPath, err)
 		}
 
 		challengePath := fullPath
 		if info.IsDir() {
 			challengePath = filepath.Join(fullPath, challengeFileName)
 			if _, err := os.Stat(challengePath); err != nil {
-				continue // Skip if challenge.yml doesn't exist
+				if os.IsNotExist(err) {
+					continue // Skip if challenge.yml doesn't exist
+				}
+				return nil, fmt.Errorf("failed to stat %s: %w", challengePath, err)
 			}
 		}
 
@@ -135,11 +137,8 @@ func (p *Parser) ParseChallengesByPaths(paths []string) ([]models.ChallengeMetad
 			return nil, err
 		}
 
-		category := p.extractCategory(challengePath)
-
 		challenges = append(challenges, models.ChallengeMetadata{
 			Challenge: *challenge,
-			Category:  category,
 			IsNew:     false,
 		})
 	}

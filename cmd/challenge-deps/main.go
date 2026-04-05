@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/ryuse/challenge-deps/internal/git"
 	"github.com/ryuse/challenge-deps/internal/graph"
@@ -160,7 +162,7 @@ func run(cfg config) error {
 		for i := range challenges {
 			for changedDir := range changedSet {
 				if challenges[i].Challenge.Path == changedDir ||
-					challenges[i].Challenge.Path == cfg.repoPath+"/"+changedDir {
+					challenges[i].Challenge.Path == filepath.Join(cfg.repoPath, changedDir) {
 					challenges[i].IsNew = true
 					break
 				}
@@ -171,11 +173,12 @@ func run(cfg config) error {
 	// Build dependency graph
 	g := graph.New()
 	if err := g.Build(challenges); err != nil {
-		// Check error type
-		if isMissingDependency(err) {
+		var circErr *graph.CircularDependencyError
+		var missErr *graph.MissingDependencyError
+		if errors.As(err, &missErr) {
 			return &MissingDependencyError{msg: err.Error()}
 		}
-		if isCircularDependency(err) {
+		if errors.As(err, &circErr) {
 			return &CircularDependencyError{msg: err.Error()}
 		}
 		return &GraphBuildError{msg: err.Error()}
@@ -259,29 +262,3 @@ func getExitCode(err error) int {
 	}
 }
 
-func isCircularDependency(err error) bool {
-	if err == nil {
-		return false
-	}
-	return contains(err.Error(), "circular")
-}
-
-func isMissingDependency(err error) bool {
-	if err == nil {
-		return false
-	}
-	return contains(err.Error(), "does not exist")
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || findSubstring(s, substr))
-}
-
-func findSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
-}

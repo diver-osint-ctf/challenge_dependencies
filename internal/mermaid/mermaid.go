@@ -86,7 +86,7 @@ func (m *Generator) Generate(direction string) string {
 		for _, e := range allEdges {
 			fromDisplay := m.getDisplayName(e.from)
 			toDisplay := m.getDisplayName(e.to)
-			builder.WriteString(fmt.Sprintf("    %s --> %s\n", fromDisplay, toDisplay))
+			builder.WriteString(fmt.Sprintf("    %s[\"%s\"] --> %s[\"%s\"]\n", e.from, fromDisplay, e.to, toDisplay))
 		}
 	}
 
@@ -102,7 +102,7 @@ func (m *Generator) Generate(direction string) string {
 		sort.Strings(standaloneNodes)
 		builder.WriteString("\n    %% Standalone challenges\n")
 		for _, node := range standaloneNodes {
-			builder.WriteString(fmt.Sprintf("    %s\n", m.getDisplayName(node)))
+			builder.WriteString(fmt.Sprintf("    %s[\"%s\"]\n", node, m.getDisplayName(node)))
 		}
 	}
 
@@ -117,13 +117,7 @@ func (m *Generator) Generate(direction string) string {
 		}
 		sort.Strings(newNodes)
 
-		// Convert node names to display names
-		var newDisplayNodes []string
-		for _, node := range newNodes {
-			newDisplayNodes = append(newDisplayNodes, m.getDisplayName(node))
-		}
-
-		builder.WriteString(fmt.Sprintf("    class %s newChallenge\n", strings.Join(newDisplayNodes, ",")))
+		builder.WriteString(fmt.Sprintf("    class %s newChallenge\n", strings.Join(newNodes, ",")))
 	}
 
 	return builder.String()
@@ -188,7 +182,8 @@ func (m *Generator) GenerateSummary() string {
 			if m.newChallenges[name] {
 				isNew = " (NEW)"
 			}
-			deps := edges[name]
+			deps := make([]string, len(edges[name]))
+			copy(deps, edges[name])
 			sort.Strings(deps)
 			// Convert dependency names to display names
 			var displayDeps []string

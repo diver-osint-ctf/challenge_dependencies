@@ -3,9 +3,29 @@ package graph
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/ryuse/challenge-deps/pkg/models"
 )
+
+// CircularDependencyError represents a circular dependency in the graph
+type CircularDependencyError struct {
+	Cycle string
+}
+
+func (e *CircularDependencyError) Error() string {
+	return fmt.Sprintf("circular dependency detected: %s", e.Cycle)
+}
+
+// MissingDependencyError represents a missing dependency in the graph
+type MissingDependencyError struct {
+	Challenge  string
+	Dependency string
+}
+
+func (e *MissingDependencyError) Error() string {
+	return fmt.Sprintf("challenge '%s' requires '%s' which does not exist", e.Challenge, e.Dependency)
+}
 
 // Graph represents a dependency graph of challenges
 type Graph struct {
@@ -66,7 +86,7 @@ func (g *Graph) validateDependencies() error {
 	for challengeName, deps := range g.edges {
 		for _, dep := range deps {
 			if _, exists := g.nodes[dep]; !exists {
-				return fmt.Errorf("challenge '%s' requires '%s' which does not exist", challengeName, dep)
+				return &MissingDependencyError{Challenge: challengeName, Dependency: dep}
 			}
 		}
 	}
@@ -96,14 +116,14 @@ func (g *Graph) dfs(node string, visited, recStack map[string]bool, path []strin
 
 	for _, neighbor := range g.edges[node] {
 		if !visited[neighbor] {
-			newPath := append(path, neighbor)
+			newPath := append(path[:len(path):len(path)], neighbor)
 			if err := g.dfs(neighbor, visited, recStack, newPath); err != nil {
 				return err
 			}
 		} else if recStack[neighbor] {
 			// Cycle detected
-			cyclePath := append(path, neighbor)
-			return fmt.Errorf("circular dependency detected: %s", formatCycle(cyclePath))
+			cyclePath := append(path[:len(path):len(path)], neighbor)
+			return &CircularDependencyError{Cycle: formatCycle(cyclePath)}
 		}
 	}
 
@@ -113,19 +133,18 @@ func (g *Graph) dfs(node string, visited, recStack map[string]bool, path []strin
 
 // formatCycle formats a cycle path for error messages
 func formatCycle(path []string) string {
-	result := ""
-	for i, node := range path {
-		if i > 0 {
-			result += " -> "
-		}
-		result += node
-	}
-	return result
+	return strings.Join(path, " -> ")
 }
 
-// GetEdges returns all edges in the graph
+// GetEdges returns a copy of all edges in the graph
 func (g *Graph) GetEdges() map[string][]string {
-	return g.edges
+	result := make(map[string][]string, len(g.edges))
+	for k, v := range g.edges {
+		cp := make([]string, len(v))
+		copy(cp, v)
+		result[k] = cp
+	}
+	return result
 }
 
 // GetNodes returns all nodes in the graph
@@ -135,19 +154,7 @@ func (g *Graph) GetNodes() map[string]*models.Challenge {
 
 // TopologicalSort returns challenges in dependency order (dependencies first)
 func (g *Graph) TopologicalSort() ([]string, error) {
-	inDegree := make(map[string]int)
-	for node := range g.nodes {
-		inDegree[node] = 0
-	}
-
-	// Calculate in-degrees: number of dependencies pointing to each node
-	// For dependency resolution order, we count how many challenges depend on each challenge
-	for node := range g.nodes {
-		inDegree[node] = len(g.reverseEdges[node])
-	}
-
-	// Find nodes with no incoming edges (no one depends on them, so they can be done last)
-	// Actually, for dependency resolution, we want nodes with no outgoing edges (no dependencies)
+	// Find nodes with no dependencies (leaf nodes)
 	queue := []string{}
 	for node := range g.nodes {
 		if len(g.edges[node]) == 0 {
@@ -169,7 +176,8 @@ func (g *Graph) TopologicalSort() ([]string, error) {
 		processed[node] = true
 
 		// Get dependents (challenges that depend on this one)
-		dependents := g.reverseEdges[node]
+		dependents := make([]string, len(g.reverseEdges[node]))
+		copy(dependents, g.reverseEdges[node])
 		sort.Strings(dependents) // For deterministic order
 
 		for _, dependent := range dependents {
@@ -196,12 +204,24 @@ func (g *Graph) TopologicalSort() ([]string, error) {
 	return result, nil
 }
 
-// GetDependents returns all challenges that depend on the given challenge
+// GetDependents returns a copy of all challenges that depend on the given challenge
 func (g *Graph) GetDependents(challengeName string) []string {
-	return g.reverseEdges[challengeName]
+	deps := g.reverseEdges[challengeName]
+	if deps == nil {
+		return nil
+	}
+	cp := make([]string, len(deps))
+	copy(cp, deps)
+	return cp
 }
 
-// GetDependencies returns all challenges that the given challenge depends on
+// GetDependencies returns a copy of all challenges that the given challenge depends on
 func (g *Graph) GetDependencies(challengeName string) []string {
-	return g.edges[challengeName]
+	deps := g.edges[challengeName]
+	if deps == nil {
+		return nil
+	}
+	cp := make([]string, len(deps))
+	copy(cp, deps)
+	return cp
 }
