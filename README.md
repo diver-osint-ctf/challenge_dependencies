@@ -52,6 +52,11 @@ on:
     types:
       - created
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   analyze:
     if: |
@@ -59,42 +64,52 @@ jobs:
       (
         github.event_name == 'issue_comment' &&
         github.event.issue.pull_request &&
-        contains(github.event.comment.body, '@github deps')
+        contains(github.event.comment.body, '@github deps') &&
+        (
+          github.event.comment.author_association == 'MEMBER' ||
+          github.event.comment.author_association == 'OWNER' ||
+          github.event.comment.author_association == 'COLLABORATOR'
+        )
       )
     runs-on: ubuntu-latest
     steps:
       - name: Set PR info
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo "BRANCH_NAME=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
-            echo "BASE_REF=${{ github.base_ref }}" >> $GITHUB_ENV
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            echo "BRANCH_NAME=${PR_HEAD_REF}" >> $GITHUB_ENV
+            echo "BASE_REF=${PR_BASE_REF}" >> $GITHUB_ENV
           else
-            BRANCH_NAME=$(gh pr view ${{ github.event.issue.number }} --json headRefName --jq .headRefName --repo ${{ github.repository }})
-            BASE_REF=$(gh pr view ${{ github.event.issue.number }} --json baseRefName --jq .baseRefName --repo ${{ github.repository }})
+            BRANCH_NAME=$(gh pr view "${ISSUE_NUMBER}" --json headRefName --jq .headRefName --repo "${REPO}")
+            BASE_REF=$(gh pr view "${ISSUE_NUMBER}" --json baseRefName --jq .baseRefName --repo "${REPO}")
             echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
             echo "BASE_REF=${BASE_REF}" >> $GITHUB_ENV
           fi
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BASE_REF: ${{ github.base_ref }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ env.BRANCH_NAME }}
           fetch-depth: 0 # Required for branch comparison
 
       - name: Fetch base branch
-        run: git fetch origin ${{ env.BASE_REF }}
+        run: git fetch origin "${BASE_REF}"
 
       - name: Analyze dependencies
         id: deps
-        uses: diver-osint-ctf/challenge_dependencies@main
+        uses: diver-osint-ctf/challenge_dependencies@caf73a4c80b3fa4e0cad62c82083d9ffd1fb7f0f # v1.0.1
         with:
           repo: "."
           base: "origin/${{ env.BASE_REF }}"
           head: "HEAD"
 
       - name: Comment PR
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
           GRAPH_OUTPUT: ${{ steps.deps.outputs.graph }}
         with:
