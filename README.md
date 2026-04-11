@@ -92,7 +92,7 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
 
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ env.BRANCH_NAME }}
           fetch-depth: 0 # Required for branch comparison
@@ -102,14 +102,14 @@ jobs:
 
       - name: Analyze dependencies
         id: deps
-        uses: diver-osint-ctf/challenge_dependencies@caf73a4c80b3fa4e0cad62c82083d9ffd1fb7f0f # v1.0.1
+        uses: diver-osint-ctf/challenge_dependencies@a791931cf6df80662d51fd69382d48e3e6f62b7c # v1.1.0
         with:
           repo: "."
           base: "origin/${{ env.BASE_REF }}"
           head: "HEAD"
 
       - name: Comment PR
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           GRAPH_OUTPUT: ${{ steps.deps.outputs.graph }}
         with:
