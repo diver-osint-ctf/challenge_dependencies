@@ -37,6 +37,20 @@ requirements:
 			wantErr: false,
 		},
 		{
+			name: "CTFd map form requirements",
+			yamlContent: `name: challenge-2
+requirements:
+  prerequisites:
+    - challenge-1
+    - challenge-0
+  anonymize: true`,
+			want: &models.Challenge{
+				Name:         "challenge-2",
+				Requirements: []string{"challenge-1", "challenge-0"},
+			},
+			wantErr: false,
+		},
+		{
 			name:        "missing name",
 			yamlContent: `requirements: []`,
 			want:        nil,
