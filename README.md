@@ -102,7 +102,7 @@ jobs:
 
       - name: Analyze dependencies
         id: deps
-        uses: diver-osint-ctf/challenge_dependencies@a791931cf6df80662d51fd69382d48e3e6f62b7c # v1.1.0
+        uses: diver-osint-ctf/challenge_dependencies@220be8bdabaa9c72ef782cb49beb7bdfa674cb44 # v1.2.0
         with:
           repo: "."
           base: "origin/${{ env.BASE_REF }}"
